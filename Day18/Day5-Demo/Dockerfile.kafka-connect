@@ -1,0 +1,19 @@
+FROM confluentinc/cp-kafka-connect:7.6.0
+
+USER root
+
+# Install Elasticsearch Sink Connector from Confluent Hub
+RUN confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+
+# Install JDBC connectors (for source data)
+RUN confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.4
+
+# Install PostgreSQL JDBC driver
+RUN curl -L -o /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib/postgresql-42.7.1.jar \
+    https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.1/postgresql-42.7.1.jar
+
+# Install Schema Registry Avro converter
+RUN confluent-hub install --no-prompt confluentinc/kafka-connect-avro-converter:7.6.0
+
+USER appuser
+

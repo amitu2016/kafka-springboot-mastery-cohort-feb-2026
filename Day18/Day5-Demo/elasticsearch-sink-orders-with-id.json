@@ -1,0 +1,19 @@
+{
+  "name": "elasticsearch-sink-orders-with-id",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "db-orders",
+    "connection.url": "http://elasticsearch:9200",
+    "type.name": "_doc",
+    "key.ignore": "true",
+    "document.id": "record_value",
+    "document.id.field": "order_id",
+    "schema.ignore": "false",
+    "batch.size": "100",
+    "max.buffered.records": "20000",
+    "flush.timeout.ms": "10000",
+    "behavior.on.null.values": "ignore"
+  }
+}
+

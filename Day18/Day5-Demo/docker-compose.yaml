@@ -1,0 +1,190 @@
+services:
+  broker1:
+    image: apache/kafka:4.1.0
+    container_name: kafka-broker11
+    hostname: broker1
+    ports:
+      - "9092:9092"
+    volumes:
+      - broker1-data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      # Listeners
+      KAFKA_LISTENERS: >
+        INTERNAL://0.0.0.0:29092,
+        EXTERNAL://0.0.0.0:9092,
+        CONTROLLER://0.0.0.0:9093
+
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://broker1:29092,
+        EXTERNAL://localhost:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        INTERNAL:PLAINTEXT,
+        EXTERNAL:PLAINTEXT,
+        CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # KRaft quorum
+      KAFKA_CONTROLLER_QUORUM_VOTERS: >
+        1@broker1:9093,
+        2@broker2:9095
+
+      # Storage
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      # Safer defaults
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  broker2:
+    image: apache/kafka:4.1.0
+    container_name: kafka-broker22
+    hostname: broker2
+    ports:
+      - "9094:9094"
+    volumes:
+      - broker2-data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      KAFKA_LISTENERS: >
+        INTERNAL://0.0.0.0:29094,
+        EXTERNAL://0.0.0.0:9094,
+        CONTROLLER://0.0.0.0:9095
+
+      KAFKA_ADVERTISED_LISTENERS: >
+        INTERNAL://broker2:29094,
+        EXTERNAL://localhost:9094
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        INTERNAL:PLAINTEXT,
+        EXTERNAL:PLAINTEXT,
+        CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: >
+        1@broker1:9093,
+        2@broker2:9095
+
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 2
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+  postgres:
+    image: postgres:15
+    container_name: postgres1
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ecommerce_db
+      POSTGRES_USER: kafka_user
+      POSTGRES_PASSWORD: kafka_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.kafka-connect
+    container_name: kafka-connect11
+    depends_on:
+      - broker1
+      - broker2
+      - postgres
+      - elasticsearch
+      - schema-registry
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: broker1:29092,broker2:29094
+      CONNECT_REST_ADVERTISED_HOST_NAME: localhost
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: connect-cluster
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_KEY_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_INTERNAL_VALUE_CONVERTER_SCHEMAS_ENABLE: "true"
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: schema-registry11
+    depends_on:
+      - broker1
+      - broker2
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker1:29092,broker2:29094
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.1
+    container_name: kafdrop11
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: broker2:29094
+    depends_on:
+      - broker1
+      - broker2
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana11
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+
+volumes:
+  broker1-data:
+  broker2-data:
+  postgres-data:
+  elasticsearch-data:
+
