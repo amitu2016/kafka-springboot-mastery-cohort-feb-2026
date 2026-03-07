@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: order-service-streams-day4
+      properties:
+        state.dir: ${user.dir}/kafka-streams-state
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        num.stream.threads: 2
+
+# Day 4 demo: stateful — running total per customer, count per category
+app:
+  kafka:
+    input-topic: orders
+    customer-totals-topic: customer-order-totals
+    orders-per-category-topic: orders-per-category
+    topic:
+      partitions: 2
+      replication-factor: 1
+  dashboard:
+    alert:
+      total-threshold: 500
+      category-count-threshold: 10
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

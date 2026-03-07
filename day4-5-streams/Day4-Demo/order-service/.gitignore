@@ -1,0 +1,12 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+.gradle/
+bin/
+kafka-streams-state/

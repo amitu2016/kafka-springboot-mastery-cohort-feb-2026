@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: order-service-streams
+      properties:
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        num.stream.threads: 2
+
+# Day 1 demo: realistic order-service topics (align with e-commerce saga / analytics)
+# Topics are created programmatically on startup (see KafkaTopicConfig)
+#
+# Topology switch:
+#   "default"           → OrderStreamsTopology (basic KStream + KTable, 2 sub-topologies)
+#   "subtopology-demo"  → SubTopologyDemoTopology (4 pipelines, 3 sub-topologies — demonstrates
+#                          how sub-topology splits work: groupByKey vs groupBy, independent pipelines)
+#
+# After switching, visit /api/streams/topology/visual to see the generated sub-topologies.
+app:
+  kafka:
+    topology: default
+    input-topic: orders
+    output-topic: orders-processed
+    reference-topic: customer-reference
+    topic:
+      partitions: 2
+      replication-factor: 1
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

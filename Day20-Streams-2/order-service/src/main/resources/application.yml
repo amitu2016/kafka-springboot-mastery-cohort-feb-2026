@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: order-service-streams-day2
+      properties:
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        num.stream.threads: 2
+
+# Day 2 demo: stateless transformations — orders → parse/filter/selectKey/branch → high-value-orders, normal-orders
+app:
+  kafka:
+    input-topic: orders
+    high-value-topic: high-value-orders
+    normal-topic: normal-orders
+    topic:
+      partitions: 2
+      replication-factor: 1
+  # Alerts based on processed results only (from output topics). Threshold = when count reaches this value.
+  dashboard:
+    alert:
+      high-value-count-threshold: 5
+      normal-count-threshold: 10
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

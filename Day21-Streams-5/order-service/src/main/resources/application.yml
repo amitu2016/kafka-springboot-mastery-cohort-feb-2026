@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: order-service-streams-day5
+      properties:
+        state.dir: ${user.dir}/kafka-streams-state
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        num.stream.threads: 2
+
+# Day 5 demo: stream-table join — orders + customers → enriched-orders
+app:
+  kafka:
+    input-topic: orders
+    customers-topic: customers
+    enriched-orders-topic: enriched-orders
+    topic:
+      partitions: 2
+      replication-factor: 1
+
+server:
+  port: 8083
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}

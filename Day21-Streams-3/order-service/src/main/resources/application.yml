@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: order-service
+  kafka:
+    bootstrap-servers: localhost:9092
+    streams:
+      application-id: order-service-streams-day3
+      properties:
+        state.dir: ${user.dir}/kafka-streams-state
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        num.stream.threads: 2
+
+# Day 3 demo: windowing — tumbling 1h windows, grace period, hourly order counts
+app:
+  kafka:
+    input-topic: orders
+    output-topic: order-counts-hourly
+    topic:
+      partitions: 2
+      replication-factor: 1
+  windowing:
+    size-hours: 1
+    grace-minutes: 5
+  # Alerts based on processed results only (from order-counts-hourly). Threshold = when windowed count >= this value.
+  dashboard:
+    alert:
+      count-threshold: 5
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
