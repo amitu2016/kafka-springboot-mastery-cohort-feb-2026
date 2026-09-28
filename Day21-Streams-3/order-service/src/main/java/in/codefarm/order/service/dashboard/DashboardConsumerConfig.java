@@ -22,7 +22,7 @@ import java.util.Map;
 @Configuration
 public class DashboardConsumerConfig {
 
-	@Value("${spring.kafka.bootstrap-servers:localhost:9092}")
+	@Value("${spring.kafka.bootstrap-servers:localhost:19092,localhost:29092,localhost:39092}")
 	private String bootstrapServers;
 
 	@Value("${app.windowing.size-hours:1}")

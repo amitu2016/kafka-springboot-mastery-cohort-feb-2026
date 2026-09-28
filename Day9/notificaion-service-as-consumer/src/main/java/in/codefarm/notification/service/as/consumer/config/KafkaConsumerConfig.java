@@ -18,7 +18,7 @@ public class KafkaConsumerConfig {
     public ConsumerFactory<String, Object> autoCommitConsumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
 
-        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         // Auto offset reset
@@ -41,7 +41,7 @@ public class KafkaConsumerConfig {
     public ConsumerFactory<String, String> manualCommitConsumerFactory() {
         Map<String, Object> configProps = new HashMap<>();
 
-        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092,localhost:29092,localhost:39092");
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         // Auto offset reset
